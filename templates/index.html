@@ -1,0 +1,13 @@
+import pandas as pd
+
+def mostrar_produtos():
+    # Nome do arquivo e aba que contém os dados
+    arquivo_excel = 'LOJINHA UNIELO.xlsx'
+    nome_aba = 'total de produtos'
+
+    # Lê a aba da planilha com os produtos totais
+    df = pd.read_excel(arquivo_excel, sheet_name=nome_aba)
+
+    # Mostra as primeiras linhas (ou todos)
+    print("Produtos totais:")
+    print(df)
