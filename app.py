@@ -1,5 +1,35 @@
 import streamlit as st
 import pandas as pd
+import os
+from datetime import datetime
+
+def salvar_pedido(produtos_selecionados, valor_total, comprovante):
+    arquivo_pedidos = "pedidos_feitos.xlsx"
+
+    # Preparar dados para salvar
+    pedido = []
+    for produto, qtd in produtos_selecionados.items():
+        pedido.append({"Produto": produto, "Quantidade": qtd})
+
+    df_pedido = pd.DataFrame(pedido)
+    df_pedido["Valor Total"] = valor_total
+    df_pedido["Data"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Salvar comprovante
+    nome_comprovante = f"comprovante_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{comprovante.name}"
+    with open(nome_comprovante, "wb") as f:
+        f.write(comprovante.getbuffer())
+
+    df_pedido["Comprovante"] = nome_comprovante
+
+    # Se arquivo existir, append; senão, criar novo
+    if os.path.exists(arquivo_pedidos):
+        df_existente = pd.read_excel(arquivo_pedidos)
+        df_final = pd.concat([df_existente, df_pedido], ignore_index=True)
+    else:
+        df_final = df_pedido
+
+    df_final.to_excel(arquivo_pedidos, index=False)
 
 def main():
     st.title("Lojinha Unielo - Compra de Produtos por Categoria")
@@ -52,7 +82,7 @@ def main():
                             st.markdown(f"**{produto}**  \nEstoque: *{estoque}*  \nPreço: **R$ {preco:,.2f}**")
                         with col2:
                             qtd = st.number_input(
-                                "", min_value=0, max_value=estoque, value=0, key=f"qtd_{categoria}_{i}"
+                                "", min_value=0, max_value=estoque, value=0, step=1, key=f"qtd_{categoria}_{i}"
                             )
                         if qtd > 0:
                             valor_total_categoria += qtd * preco
@@ -72,9 +102,12 @@ def main():
     if finalizar:
         if valor_total_geral == 0:
             st.error("Selecione ao menos um produto com quantidade maior que zero.")
+        elif comprovante is None:
+            st.error("Você precisa enviar o comprovante do PIX para finalizar a compra.")
         else:
+            salvar_pedido(produtos_selecionados, valor_total_geral, comprovante)
             st.success("Compra finalizada com sucesso!")
-            # Aqui você pode salvar o pedido, enviar email, etc.
+            st.balloons()
 
     st.markdown("---")
     st.caption("Sistema interno - Lojinha UnieLo")
